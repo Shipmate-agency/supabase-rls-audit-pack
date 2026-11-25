@@ -9,6 +9,13 @@ SELECT
 FROM pg_tables
 WHERE schemaname = 'public'
   AND rowsecurity = false
+  -- skip tables owned by an extension (e.g. PostGIS spatial_ref_sys); you can't ALTER those
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_depend d
+    WHERE d.classid = 'pg_class'::regclass
+      AND d.objid = (quote_ident(schemaname) || '.' || quote_ident(tablename))::regclass
+      AND d.deptype = 'e'
+  )
 
 UNION ALL
 
@@ -45,4 +52,9 @@ WHERE n.nspname = 'public'
     FROM unnest(c.reloptions) AS opt
     WHERE opt LIKE 'security_invoker=%'
   ), false)
+  -- skip views owned by an extension (e.g. pg_stat_statements installed into public)
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_depend d
+    WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e'
+  )
 ORDER BY issue, object_name;
