@@ -39,5 +39,10 @@ FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public'
   AND c.relkind = 'v'
-  AND NOT coalesce('security_invoker=true' = ANY(c.reloptions), false)
+  -- reloptions keep the value as written (true/on/1/yes), so cast it like Postgres does
+  AND NOT coalesce((
+    SELECT split_part(opt, '=', 2)::boolean
+    FROM unnest(c.reloptions) AS opt
+    WHERE opt LIKE 'security_invoker=%'
+  ), false)
 ORDER BY issue, object_name;
