@@ -5,7 +5,7 @@
 SELECT
   'rls_disabled_in_public' AS issue,
   schemaname || '.' || tablename AS object_name,
-  'Run: ALTER TABLE ' || quote_ident(schemaname) || '.' || quote_ident(tablename) || ' ENABLE ROW LEVEL SECURITY;' AS remediation
+  'Run: ALTER TABLE ' || quote_ident(schemaname) || '.' || quote_ident(tablename) || ' ENABLE ROW LEVEL SECURITY; then add policies (with none, anon and authenticated get zero rows).' AS remediation
 FROM pg_tables
 WHERE schemaname = 'public'
   AND rowsecurity = false
@@ -24,7 +24,7 @@ UNION ALL
 SELECT
   'policy_using_true_write' AS issue,
   schemaname || '.' || tablename || ' (' || policyname || ')' AS object_name,
-  'Bind ' || cmd || ' policy to auth.uid() or verified workspace membership.' AS remediation
+  'Replace (true) in ' || cmd || ' policy with an ownership check, e.g. (select auth.uid()) = user_id; INSERT and UPDATE need it in WITH CHECK too.' AS remediation
 FROM pg_policies
 WHERE schemaname = 'public'
   AND cmd IN ('ALL', 'INSERT', 'UPDATE', 'DELETE')
@@ -41,7 +41,7 @@ UNION ALL
 SELECT
   'security_definer_view' AS issue,
   n.nspname || '.' || c.relname AS object_name,
-  'Run: ALTER VIEW ' || quote_ident(n.nspname) || '.' || quote_ident(c.relname) || ' SET (security_invoker = true);' AS remediation
+  'Run: ALTER VIEW ' || quote_ident(n.nspname) || '.' || quote_ident(c.relname) || ' SET (security_invoker = true); callers then need SELECT and RLS access on the underlying tables.' AS remediation
 FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public'
