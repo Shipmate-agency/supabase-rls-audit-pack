@@ -31,8 +31,8 @@ WHERE schemaname = 'public'
   AND permissive = 'PERMISSIVE'
   AND roles && ARRAY['public', 'anon', 'authenticated']::name[]
   AND (
-    lower(coalesce(qual, '')) IN ('true', '(true)')
-    OR lower(coalesce(with_check, '')) IN ('true', '(true)')
+    replace(lower(coalesce(qual, '')), ' ', '') IN ('true', '(true)', '1=1', '(1=1)')
+    OR replace(lower(coalesce(with_check, '')), ' ', '') IN ('true', '(true)', '1=1', '(1=1)')
   )
 
 UNION ALL
