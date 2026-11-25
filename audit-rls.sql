@@ -12,7 +12,8 @@ WHERE schemaname = 'public'
 
 UNION ALL
 
--- 2. Overly permissive write policies using (true)
+-- 2. Overly permissive write policies using (true) that API clients can use
+--    (RESTRICTIVE policies only narrow access; service_role bypasses RLS anyway)
 SELECT
   'policy_using_true_write' AS issue,
   schemaname || '.' || tablename || ' (' || policyname || ')' AS object_name,
@@ -20,6 +21,8 @@ SELECT
 FROM pg_policies
 WHERE schemaname = 'public'
   AND cmd IN ('ALL', 'INSERT', 'UPDATE', 'DELETE')
+  AND permissive = 'PERMISSIVE'
+  AND roles && ARRAY['public', 'anon', 'authenticated']::name[]
   AND (
     lower(coalesce(qual, '')) IN ('true', '(true)')
     OR lower(coalesce(with_check, '')) IN ('true', '(true)')
